@@ -64,22 +64,35 @@ public class Node{
 	public Block generateBlock(Block parentBlock, Timestamp creationTime){
 		
 		String uBlockID = uID + "_B_" + numCreatedBlock;
-		String txnID = "create_"+uID+"_"+creationTime;
 		this.nextBlockTime = creationTime;
-		Transaction createCoin = new Transaction(txnID, uID, creationTime);
-		ArrayList<Transaction> txnList = new ArrayList<Transaction>();
-		txnList.add(0,createCoin);
 		this.probParentBlock = parentBlock;
-		Block newBlock = new Block(uBlockID, creationTime, uID, parentBlock, txnList);
+		this.calculateBTC();
+		Block newBlock = new Block(uBlockID, creationTime, uID, parentBlock,null);
 		return newBlock;
 	}
 
 	//Code to add a block in the node's block chain
 	public boolean addBlock(Block newBlock){
+		
+		//check if all txns in the block valid according to me
+		boolean valid = true;
+		ArrayList<Transaction> tmpTxns = newBlock.getTxnList();
+		for(int i=0;i<tmpTxns.size();i++){
+			Transaction tmpTxn = tmpTxns.get(i);
+			//check block validity
+			if(!this.checkValid(tmpTxn)){
+				System.out.println("Txn: "+tmpTxn.getTxnID()+" failed");
+				valid = false;
+				break;
+			}
+		}
+		//end of check
+		
+		
 		String parentBlockID = newBlock.getParentBlockID();
 		String currentBlockID = newBlock.getBlockID();
 		String creatorID = newBlock.getCreatorID();
-		if(blockChain.containsKey(parentBlockID)){
+		if(blockChain.containsKey(parentBlockID) && valid){
 			blockChain.put(currentBlockID, newBlock);
 			if(!blockChain.get(parentBlockID).checkChild(currentBlockID)){
 				blockChain.get(parentBlockID).putChild(currentBlockID);
@@ -91,6 +104,7 @@ public class Node{
 				return true;
 			}
 		}else{
+			//block can turn valid lateron
 			if(!this.blockIncludePending.contains(newBlock)){
 				this.blockIncludePending.add(newBlock);
 			}
@@ -128,7 +142,7 @@ public class Node{
 			if(newTxn.getAmount()<=currOwned){
 				//Add to sentTxn ArrayList
 				sentTxn.add(numSentTxn, newTxn);
-				currOwned = currOwned - newTxn.getAmount();
+//				currOwned = currOwned - newTxn.getAmount();
 				numSentTxn++;
 				this.numTotalTxnIncludePending++;
 				this.totalTxnIncludePending.add(newTxn);
@@ -142,7 +156,7 @@ public class Node{
 		else if(newTxn.getReceiverID().equals(this.uID)){
 			//Add to receivedTxn ArrayList
 			receivedTxn.add(numReceivedTxn, newTxn);
-			currOwned = currOwned + newTxn.getAmount();
+//			currOwned = currOwned + newTxn.getAmount();
 			numReceivedTxn++;
 			this.numTotalTxnIncludePending++;
 			this.totalTxnIncludePending.add(newTxn);
@@ -155,6 +169,46 @@ public class Node{
 		}
 	}
 
+	//check if txn is valid or not
+	public boolean checkValid(Transaction t){
+		String senderID = t.getSenderID();
+		if(senderID == "god"){
+			return true;
+		}
+		double btc = 0;
+		Block blk_iter = this.probParentBlock;
+		while(blk_iter!=null){
+			for(int i=0;i<blk_iter.txnList.size();i++){
+				if(senderID.equals(blk_iter.txnList.get(i).getSenderID())){
+					btc -= blk_iter.txnList.get(i).getAmount();
+				}else if(senderID.equals(blk_iter.txnList.get(i).getReceiverID())){
+					btc += blk_iter.txnList.get(i).getAmount();
+				}
+			}
+			blk_iter = blk_iter.getParentBlock();
+		}		
+		return (btc>=t.getAmount());
+	}
+	
+	//calculate number of BTC I own in the longest block chain
+	public double calculateBTC(){
+		String nodeId = this.uID;
+		float btc = 0;
+		Block blk_iter = this.probParentBlock;
+		while(blk_iter!=null){
+			for(int i=0;i<blk_iter.txnList.size();i++){
+				if(nodeId.equals(blk_iter.txnList.get(i).getSenderID())){
+					btc -= blk_iter.txnList.get(i).getAmount();
+				}else if(nodeId.equals(blk_iter.txnList.get(i).getReceiverID())){
+					btc += blk_iter.txnList.get(i).getAmount();
+				}
+			}
+			blk_iter = blk_iter.getParentBlock();
+		}
+		this.currOwned = btc;
+		return btc;
+	}
+	
 	//function to update pending include transaction list
 	/*
 	public void updateTxnIncludePending(LinkedList<Transaction> newList){
