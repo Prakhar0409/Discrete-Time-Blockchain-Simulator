@@ -64,22 +64,35 @@ public class Node{
 	public Block generateBlock(Block parentBlock, Timestamp creationTime){
 		
 		String uBlockID = uID + "_B_" + numCreatedBlock;
-		String txnID = "create_"+uID+"_"+creationTime;
 		this.nextBlockTime = creationTime;
-		Transaction createCoin = new Transaction(txnID, uID, creationTime);
-		ArrayList<Transaction> txnList = new ArrayList<Transaction>();
-		txnList.add(0,createCoin);
 		this.probParentBlock = parentBlock;
-		Block newBlock = new Block(uBlockID, creationTime, uID, parentBlock, txnList);
+		this.calculateBTC();
+		Block newBlock = new Block(uBlockID, creationTime, uID, parentBlock,null);
 		return newBlock;
 	}
 
 	//Code to add a block in the node's block chain
 	public boolean addBlock(Block newBlock){
+		
+		//check if all txns in the block valid according to me
+		boolean valid = true;
+		ArrayList<Transaction> tmpTxns = newBlock.getTxnList();
+		for(int i=0;i<tmpTxns.size();i++){
+			Transaction tmpTxn = tmpTxns.get(i);
+			//check block validity
+			if(!this.checkValid(tmpTxn)){
+				System.out.println("Txn: "+tmpTxn.getTxnID()+" failed");
+				valid = false;
+				break;
+			}
+		}
+		//end of check
+		
+		
 		String parentBlockID = newBlock.getParentBlockID();
 		String currentBlockID = newBlock.getBlockID();
 		String creatorID = newBlock.getCreatorID();
-		if(blockChain.containsKey(parentBlockID)){
+		if(blockChain.containsKey(parentBlockID) && valid){
 			blockChain.put(currentBlockID, newBlock);
 			if(!blockChain.get(parentBlockID).checkChild(currentBlockID)){
 				blockChain.get(parentBlockID).putChild(currentBlockID);
@@ -91,6 +104,7 @@ public class Node{
 				return true;
 			}
 		}else{
+			//block can turn valid lateron
 			if(!this.blockIncludePending.contains(newBlock)){
 				this.blockIncludePending.add(newBlock);
 			}
@@ -159,6 +173,9 @@ public class Node{
 	//check if txn is valid or not
 	public boolean checkValid(Transaction t){
 		String senderID = t.getSenderID();
+		if(senderID == "god"){
+			return true;
+		}
 		double btc = 0;
 		Block blk_iter = this.probParentBlock;
 		while(blk_iter!=null){
@@ -171,7 +188,7 @@ public class Node{
 			}
 			blk_iter = blk_iter.getParentBlock();
 		}		
-		return (btc>t.getAmount());
+		return (btc>=t.getAmount());
 	}
 	
 	//calculate number of BTC I own in the longest block chain

@@ -13,7 +13,7 @@ public class Block{
 	private ArrayList<String> childList = new ArrayList<String>();
 	private int numChild = 0;
 	public ArrayList<Transaction> txnList = new ArrayList<Transaction>();
-	private int numTxns;
+
 
 	Block(String uBlokckID, Timestamp creationTime, String creatorID, Block parentBlock, ArrayList<Transaction> txnList){
 		this.uBlokckID = uBlokckID;
@@ -24,7 +24,6 @@ public class Block{
 		if(txnList!=null){
 			this.txnList = txnList;
 		}
-		this.numTxns = txnList.size()-1;
 	}
 
 	Block(String uBlokckID, Timestamp creationTime){
@@ -44,7 +43,6 @@ public class Block{
 		this.childList = b.getChildList();
 		this.numChild = this.childList.size();
 		this.txnList = b.getTxnList();
-		this.numTxns = this.txnList.size()-1;
 		
 	}
 	
@@ -55,12 +53,12 @@ public class Block{
 	
 	//function to add txns to a block
 	public void addTxn(Transaction newTxn){
-		txnList.add(numTxns++,newTxn);
+		this.txnList.add(newTxn);
 	}
 
 	//returning a transaction from the block using correspondng transaction id
 	public Transaction getTxn(String txnID){
-		for(int i = 0; i<=numTxns; i++){
+		for(int i = 0; i< this.txnList.size(); i++){
 			if(txnList.get(i).getTxnID().equals(txnID)){
 				return txnList.get(i);
 			}
@@ -70,7 +68,7 @@ public class Block{
 
 	//to check whether a txn with particular id has been there in the list or not
 	public boolean containsTxn(String txnID){
-		for(int i = 0; i<=numTxns; i++){
+		for(int i = 0; i<this.txnList.size(); i++){
 			if(txnList.get(i).getTxnID().equals(txnID)){
 				return true;
 			}
@@ -124,11 +122,6 @@ public class Block{
 	//to return creation time of the block
 	public Timestamp getCreationTime(){
 		return creationTime;
-	}
-
-	//to get number of transaction in the Block
-	public int getNumTxns(){
-		return numTxns;
 	}
 
 	//to get the depth of the current block

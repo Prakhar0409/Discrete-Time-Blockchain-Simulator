@@ -8,11 +8,11 @@ import java.util.HashMap;
 public class Simulator{
 	public static void main(String[] args){
 
-		int numPeers = 3;//Integer.parseInt(args[0]);
+		int numPeers = Integer.parseInt(args[0]);
 
 		double minPropDelay = 10;
 		double maxPropDelay = 500;
-		double qDelayParameter = 1;
+		double qDelayParameter = 12.0/1024.0;
 		ArrayList<Node> nodeList = new ArrayList<Node>();
 
 		//Genesis Block
@@ -200,7 +200,6 @@ public class Simulator{
 					//Code to execute receive Block event
 					int currentNum = nextEvent.getReceiverNum();
 					int creatorNum = nextEvent.getCreatorNum();
-					int senderNum = nextEvent.getSenderNum();
 					Node currentNode = nodeList.get(currentNum);
 
 					Block tmpBlock = nextEvent.getEventBlock();
@@ -209,10 +208,12 @@ public class Simulator{
 					Block currentBlock = nextEvent.getEventBlock();
 					String currentBlockID = currentBlock.getBlockID();
 					if(!currentNode.checkForwarded(currentBlockID)){
-
+						
 						nodeList.get(currentNum).addForwarded(currentBlockID);
 						boolean addBlockSuccess = nodeList.get(currentNum).addBlock(currentBlock);
+
 						if(addBlockSuccess){
+							//check if any pending blocks can be added
 							nodeList.get(currentNum).addPendingBlocks();
 						}
 						int currentDepth = nodeList.get(currentNum).probParentBlock.getDepth();
@@ -251,25 +252,32 @@ public class Simulator{
 								}
 								long qDelay = (long)((-1*Math.log(qDelayP1)*bottleNeck[currentNum][nextNodeNum])/qDelayParameter);
 								long pDelay = Math.round(propagationDelay[currentNum][nextNodeNum]);
-								Timestamp receiveTime = new Timestamp(nextEventTime.getTime()+ qDelay + pDelay);									
+								long msgDelay = 0;
+								if(bottleNeck[creatorNum][nextNodeNum]!=null){
+									msgDelay = Math.round(1000.0/bottleNeck[creatorNum][nextNodeNum]);
+								}
+								Timestamp receiveTime = new Timestamp(nextEventTime.getTime()+ qDelay + pDelay + msgDelay);									
 								Event newEvent = new Event(1, currentBlock, receiveTime, nextNodeNum, currentNum);
 								pendingEvents.add(newEvent);
 							}							
 						}
 						//Timestamp of the next event to be executed
-						System.out.println("Block received "+currentBlockID+" at depth "+ currentBlock.getDepth() +" by "+ currentNum);
+						System.out.println("Block: "+currentBlockID+" received at depth: "+ currentBlock.getDepth() +" at node: "+ currentNum);
 						nextEventTime = pendingEvents.peek().getEventTimestamp();
 					}
 				}
 				else if(nextEvent.getEventType()==2){
+					
 					//Code to execute generate Block
 					int creatorNum = nextEvent.getCreatorNum();
 					Node currentNode = nodeList.get(creatorNum);
 					Block currentBlock = nextEvent.getEventBlock();
+					System.out.println("Reached block creation code in node: "+currentNode.getUID()+" block: "+currentBlock.getBlockID());
 					Timestamp nextBlockTime = currentNode.nextBlockTime;
 									
 					if(!(nextBlockTime.after(nextEventTime) || nextBlockTime.before(nextEventTime))){ //Only execute this if the node still decides to execute it
 						
+//						System.out.println("heere");
 						//mining fee transaction 
 						Transaction mfee = new Transaction(currentNode.getUID()+"_mining_fee","god",currentNode.getUID(),50,new Timestamp(System.currentTimeMillis()));
 						currentBlock.addTxn(mfee);
@@ -277,30 +285,33 @@ public class Simulator{
 						//change block to include transactions
 						Block parent = currentNode.probParentBlock;
 						for(int i=0;i<currentNode.allTxns.size();i++){
-							boolean flag = true;
+							boolean alreadyIncluded = false;
 							Transaction tmpTxn = currentNode.allTxns.get(i);
+							
+							//check block validity
 							if(!currentNode.checkValid(tmpTxn)){
 								continue;	//continue if invalid. It can turn valid after some time.
 							}
 							while(parent!=null){
 								if(parent.txnList.contains(tmpTxn)){
-									flag = false;
+									System.out.println("Txn: "+tmpTxn.getTxnID()+" failed");
+									alreadyIncluded = true;
 									break;
 								}
 								parent = parent.getParentBlock();
 							}
-							if(flag){
+							if(!alreadyIncluded){
 								currentBlock.addTxn(tmpTxn);
 							}
 						}
 						//end of adding pending transaction to the new block
-						
+//						System.out.println("ttttttheere");
 						nodeList.get(creatorNum).addForwarded(currentBlock.getBlockID());
 						boolean addBlockSuccess = nodeList.get(creatorNum).addBlock(currentBlock);
 						nodeList.get(creatorNum).probParentBlock = currentBlock;
 						nodeList.get(creatorNum).calculateBTC();
 						if(addBlockSuccess){
-							System.out.println("Node "+creatorNum+" created Block "+currentBlock.getBlockID()+ " at Depth "+ currentBlock.getDepth() + " ON "+currentBlock.getParentBlockID());
+							System.out.println("Node: "+creatorNum+" created Block: "+currentBlock.getBlockID()+ " at Depth: "+ currentBlock.getDepth() + " ON: "+currentBlock.getParentBlockID());
 							for(int i=0; i<numPeers; i++){
 								Node nextNode = currentNode.getNode(i);
 								if(nextNode == null){
@@ -315,14 +326,18 @@ public class Simulator{
 									}
 									long qDelay = (long)((-1*Math.log(qDelayP1)*bottleNeck[creatorNum][nextNodeNum])/qDelayParameter);
 									long pDelay = Math.round(propagationDelay[creatorNum][nextNodeNum]);
-									Timestamp receiveTime = new Timestamp(nextEventTime.getTime()+ qDelay + pDelay);									
+									long msgDelay = 0;
+									if(bottleNeck[creatorNum][nextNodeNum]!=null){
+										msgDelay = Math.round(1000.0/bottleNeck[creatorNum][nextNodeNum]);
+									}
+									Timestamp receiveTime = new Timestamp(nextEventTime.getTime()+ qDelay + pDelay+msgDelay);									
 									Event newEvent = new Event(1, currentBlock, receiveTime, nextNodeNum, creatorNum);
 									pendingEvents.add(newEvent);
 
 								}							
 							}						
 						}
-						//to Generate the next transaction for the sending node
+						//to Generate the next Block for the sending node
 						Random randNext = new Random(System.nanoTime());
 						double nextTimeOffset = randNext.nextDouble();
 						while (nextTimeOffset == 0.0){
@@ -356,7 +371,7 @@ public class Simulator{
 						//end
 						
 						int txnReceiverNum = Integer.parseInt((newTxn.getReceiverID()).split("_")[1]);
-						System.out.print("Transaction Id "+ newTxnID+" Money receiver :"+txnReceiverNum+" "+"Message Receiver :"+receiverNum);
+						System.out.print("Transaction Id: "+ newTxnID+" Money receiver: "+txnReceiverNum+" "+"Message Receiver: "+receiverNum);
 						if(txnReceiverNum == receiverNum){ //checking the transaction is meant for that node or not
 							boolean addReceiveSuccess = nodeList.get(receiverNum).addTxn(newTxn);							
 						}
@@ -421,7 +436,7 @@ public class Simulator{
 					nodeList.get(senderNum).addForwarded(newTxn.getTxnID());
 					if(addTxnSuccess){			//proceeding only when the transaction is successfully added
 						if (newAmount!=0){
-							System.out.println(senderID + " sents " + newTxn.getAmount()+ " to " + newTxn.getReceiverID()+" a: "+ nodeList.get(senderNum).getCurrOwned());
+							System.out.println("Node: "+ senderID + " sends " + newTxn.getAmount()+ " to: " + newTxn.getReceiverID()+" a: "+ nodeList.get(senderNum).getCurrOwned());
 							for(int i=0; i<numPeers; i++){
 								Node nextNode = tempSenderNode.getNode(i);
 								if(nextNode == null){
