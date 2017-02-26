@@ -15,7 +15,7 @@ public class Simulator{
 			PrintWriter transactionHistory = new PrintWriter("transactionHistory.txt", "UTF-8");
 			PrintWriter blockChainHistory = new PrintWriter("blockChainHistory.txt", "UTF-8");
 			
-			int numPeers = 3;//Integer.parseInt(args[0]);
+			int numPeers = Integer.parseInt(args[0]);
 			double minPropDelay = 10;
 			double maxPropDelay = 500;
 			double qDelayParameter = 12.0/1024.0;
