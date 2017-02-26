@@ -497,9 +497,9 @@ public class Simulator{
 							nextEventTime = pendingEvents.peek().getEventTimestamp();
 							// System.out.println(nextEventTime);
 						}
-						else{
-							System.out.println("Add Transaction Failed!!");
-						}	
+//						else{
+//							System.out.println("Add Transaction Failed!!");
+//						}	
 					}
 					else{
 						System.out.println("Error: Wrong Eventtype Detected.");

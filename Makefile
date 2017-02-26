@@ -6,5 +6,9 @@ all:
 	javac TreeNode.java
 	javac Utilities.java
 	javac Simulator.java	
+
+run3:
+	java Simulator 3
+
 clean:
 	rm *.class
