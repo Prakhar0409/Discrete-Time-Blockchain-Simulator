@@ -12,7 +12,7 @@ public class Block{
 	//This list contains all the transactions included in the block
 	private ArrayList<String> childList = new ArrayList<String>();
 	private int numChild = 0;
-	private ArrayList<Transaction> txnList = new ArrayList<Transaction>();
+	public ArrayList<Transaction> txnList = new ArrayList<Transaction>();
 	private int numTxns;
 
 	Block(String uBlokckID, Timestamp creationTime, String creatorID, Block parentBlock, ArrayList<Transaction> txnList){
