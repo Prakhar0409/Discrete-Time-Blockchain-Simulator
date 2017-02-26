@@ -140,7 +140,6 @@ public class Node{
 		}
 		else if(newTxn.getReceiverID().equals(this.uID)){
 			//Add to receivedTxn ArrayList
-			System.out.print("Added!!");
 			receivedTxn.add(numReceivedTxn, newTxn);
 			currOwned = currOwned + newTxn.getAmount();
 			numReceivedTxn++;
