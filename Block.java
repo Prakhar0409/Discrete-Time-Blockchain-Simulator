@@ -21,7 +21,9 @@ public class Block{
 		this.creatorID = creatorID;
 		this.parentBlock = parentBlock;
 		this.depth = parentBlock.getDepth()+1;
-		this.txnList = txnList;
+		if(txnList!=null){
+			this.txnList = txnList;
+		}
 		this.numTxns = txnList.size()-1;
 	}
 
@@ -30,7 +32,7 @@ public class Block{
 		this.creationTime = creationTime;
 		this.creatorID = "satoshi";
 		this.parentBlock = null;
-		this.txnList = null;
+//		this.txnList = null;
 		this.depth = 0;
 	}
 
