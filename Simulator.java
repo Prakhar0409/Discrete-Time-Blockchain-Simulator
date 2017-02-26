@@ -1,7 +1,6 @@
 import java.sql.Timestamp;
 import java.util.Random;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Iterator;
 import java.util.HashMap;
@@ -9,28 +8,18 @@ import java.util.HashMap;
 public class Simulator{
 	public static void main(String[] args){
 
-		int numPeers = Integer.parseInt(args[0]);
+		int numPeers = 3;//Integer.parseInt(args[0]);
 
 		double minPropDelay = 10;
 		double maxPropDelay = 500;
 		double qDelayParameter = 1;
 		ArrayList<Node> nodeList = new ArrayList<Node>();
 
-		//List to store all the accepted blockchain so far
-		ArrayList<Block> blockChain = new ArrayList<Block>();
-		long numBlock = 0;
-
-		//List to store all the unincluded transaction of the network
-		// LinkedList<Transaction> unIncludedTxns = new LinkedList<Transaction>();
-		// long numUtxns = 0; 
-
-		//Genesys Block
+		//Genesis Block
 		Timestamp genesisTime = new Timestamp(System.currentTimeMillis());
 		Block genesisBlock = new Block("genesis", genesisTime);
-		numBlock++;
-		blockChain.add(genesisBlock);
 
-		//Generating numPeers number of nodes with randomly choosing fast and slow property
+		//Generating numPeers nodes
 		//type true for fast nodes and false for lazy nodes
 		Random randType = new Random(System.nanoTime());
 		for(int i=0; i<numPeers; i++){
@@ -41,7 +30,7 @@ public class Simulator{
 			nodeList.add(i,newNode);
 		}
 
-		//to create a connencted graph with each node connected to a random number of other nodes
+		//to create a connected graph with each node connected to a random number of other nodes
 		Boolean[][] connectionArray = new Boolean[numPeers][numPeers];
 		for(int i = 0; i<numPeers; i++){
 			for(int j = 0; j<numPeers; j++){
@@ -106,8 +95,7 @@ public class Simulator{
 						propagationDelay[i][j] = propDelay;
 					}
 					
-				}
-				else{
+				}else{
 					//To mantain the symmetry of the propagation delay
 					if(propagationDelay[j][i]!= null){
 						nodeList.get(i).addNode(nodeList.get(j));
@@ -149,17 +137,13 @@ public class Simulator{
 			txnMean[i] = 1/tempTxnMean;
 		}
 
-
-		//Probable Tree of the blockchain broadcasted so far
-
-		//Priortiy Queue of events to be executed
+		//Priority Queues of events to be executed and finished
 		PriorityQueue<Event> pendingEvents = new PriorityQueue<Event>();
-		//Priority Queue of events executed so far
 		PriorityQueue<Event> finishedEvents = new PriorityQueue<Event>();
 
 		long simTime = 1000*1000;
 		Timestamp currTime = new Timestamp(System.currentTimeMillis());
-		Timestamp startTime = currTime;
+//		Timestamp startTime = currTime;
 		long currTimeOffset = currTime.getTime();
 		Timestamp maxTime = new Timestamp(currTimeOffset + (long)(Math.random()*simTime));
 
@@ -173,6 +157,7 @@ public class Simulator{
 			double nextTimeGap = -1*Math.log(nextTimeOffset)/cpuPower[i];
 			Timestamp nextBlockTime = new Timestamp(currTimeOffset + (long)nextTimeGap*1000);
 			Block newBlock = nodeList.get(i).generateBlock(genesisBlock, nextBlockTime);
+			//register a new block generation event
 			Event newEvent = new Event(2, newBlock, nextBlockTime, i);
 			nodeList.get(i).nextBlockTime = nextBlockTime;
 			pendingEvents.add(newEvent);
@@ -198,6 +183,7 @@ public class Simulator{
 			String receiverID = nodeList.get(rcvNum).getUID();
 			float receivedAmount = 0 ;
 			Transaction newTransaction = nodeList.get(i).generateTxn(receiverID, receivedAmount, nextTxnTime);
+			//register generate transcation event
 			Event newEvent = new Event(4, newTransaction, nextTxnTime);
 			pendingEvents.add(newEvent);
 		}
@@ -216,6 +202,10 @@ public class Simulator{
 					int creatorNum = nextEvent.getCreatorNum();
 					int senderNum = nextEvent.getSenderNum();
 					Node currentNode = nodeList.get(currentNum);
+
+					Block tmpBlock = nextEvent.getEventBlock();
+//					Block currentBlock = new Block(tmpBlock);
+
 					Block currentBlock = nextEvent.getEventBlock();
 					String currentBlockID = currentBlock.getBlockID();
 					if(!currentNode.checkForwarded(currentBlockID)){
@@ -231,6 +221,8 @@ public class Simulator{
 						if(blockDepth > currentDepth){
 							//updating the probable parent block
 							nodeList.get(currentNum).probParentBlock = currentBlock;
+							nodeList.get(creatorNum).calculateBTC();
+							
 							//to Generate the next transaction for the sending node
 							Random randNext = new Random(System.nanoTime());
 							double nextTimeOffset = randNext.nextDouble();
@@ -278,11 +270,18 @@ public class Simulator{
 									
 					if(!(nextBlockTime.after(nextEventTime) || nextBlockTime.before(nextEventTime))){ //Only execute this if the node still decides to execute it
 						
+						//mining fee transaction 
+						Transaction mfee = new Transaction(currentNode.getUID()+"_mining_fee","god",currentNode.getUID(),50,new Timestamp(System.currentTimeMillis()));
+						currentBlock.addTxn(mfee);
+						
 						//change block to include transactions
 						Block parent = currentNode.probParentBlock;
 						for(int i=0;i<currentNode.allTxns.size();i++){
 							boolean flag = true;
 							Transaction tmpTxn = currentNode.allTxns.get(i);
+							if(!currentNode.checkValid(tmpTxn)){
+								continue;	//continue if invalid. It can turn valid after some time.
+							}
 							while(parent!=null){
 								if(parent.txnList.contains(tmpTxn)){
 									flag = false;
@@ -299,6 +298,7 @@ public class Simulator{
 						nodeList.get(creatorNum).addForwarded(currentBlock.getBlockID());
 						boolean addBlockSuccess = nodeList.get(creatorNum).addBlock(currentBlock);
 						nodeList.get(creatorNum).probParentBlock = currentBlock;
+						nodeList.get(creatorNum).calculateBTC();
 						if(addBlockSuccess){
 							System.out.println("Node "+creatorNum+" created Block "+currentBlock.getBlockID()+ " at Depth "+ currentBlock.getDepth() + " ON "+currentBlock.getParentBlockID());
 							for(int i=0; i<numPeers; i++){

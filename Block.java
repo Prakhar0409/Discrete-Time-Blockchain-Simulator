@@ -7,7 +7,7 @@ public class Block{
 	private Timestamp creationTime;
 	private String creatorID;
 	private Block parentBlock;
-	private int depth;
+	private int depth = 0;
 
 	//This list contains all the transactions included in the block
 	private ArrayList<String> childList = new ArrayList<String>();
@@ -32,10 +32,27 @@ public class Block{
 		this.creationTime = creationTime;
 		this.creatorID = "satoshi";
 		this.parentBlock = null;
-//		this.txnList = null;
 		this.depth = 0;
 	}
 
+	Block(Block b){
+		this.uBlokckID = b.getBlockID();
+		this.creationTime = b.getCreationTime();
+		this.creatorID = b.getCreatorID();
+		this.parentBlock = b.getParentBlock();
+		this.depth = b.depth;
+		this.childList = b.getChildList();
+		this.numChild = this.childList.size();
+		this.txnList = b.getTxnList();
+		this.numTxns = this.txnList.size()-1;
+		
+	}
+	
+	//get transcation list;
+	public ArrayList<Transaction> getTxnList(){
+		return this.txnList;
+	}
+	
 	//function to add txns to a block
 	public void addTxn(Transaction newTxn){
 		txnList.add(numTxns++,newTxn);

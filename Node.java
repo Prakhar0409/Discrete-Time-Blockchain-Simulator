@@ -128,7 +128,7 @@ public class Node{
 			if(newTxn.getAmount()<=currOwned){
 				//Add to sentTxn ArrayList
 				sentTxn.add(numSentTxn, newTxn);
-				currOwned = currOwned - newTxn.getAmount();
+//				currOwned = currOwned - newTxn.getAmount();
 				numSentTxn++;
 				this.numTotalTxnIncludePending++;
 				this.totalTxnIncludePending.add(newTxn);
@@ -143,7 +143,7 @@ public class Node{
 			//Add to receivedTxn ArrayList
 			System.out.print("Added!!");
 			receivedTxn.add(numReceivedTxn, newTxn);
-			currOwned = currOwned + newTxn.getAmount();
+//			currOwned = currOwned + newTxn.getAmount();
 			numReceivedTxn++;
 			this.numTotalTxnIncludePending++;
 			this.totalTxnIncludePending.add(newTxn);
@@ -156,6 +156,43 @@ public class Node{
 		}
 	}
 
+	//check if txn is valid or not
+	public boolean checkValid(Transaction t){
+		String senderID = t.getSenderID();
+		double btc = 0;
+		Block blk_iter = this.probParentBlock;
+		while(blk_iter!=null){
+			for(int i=0;i<blk_iter.txnList.size();i++){
+				if(senderID.equals(blk_iter.txnList.get(i).getSenderID())){
+					btc -= blk_iter.txnList.get(i).getAmount();
+				}else if(senderID.equals(blk_iter.txnList.get(i).getReceiverID())){
+					btc += blk_iter.txnList.get(i).getAmount();
+				}
+			}
+			blk_iter = blk_iter.getParentBlock();
+		}		
+		return (btc>t.getAmount());
+	}
+	
+	//calculate number of BTC I own in the longest block chain
+	public double calculateBTC(){
+		String nodeId = this.uID;
+		float btc = 0;
+		Block blk_iter = this.probParentBlock;
+		while(blk_iter!=null){
+			for(int i=0;i<blk_iter.txnList.size();i++){
+				if(nodeId.equals(blk_iter.txnList.get(i).getSenderID())){
+					btc -= blk_iter.txnList.get(i).getAmount();
+				}else if(nodeId.equals(blk_iter.txnList.get(i).getReceiverID())){
+					btc += blk_iter.txnList.get(i).getAmount();
+				}
+			}
+			blk_iter = blk_iter.getParentBlock();
+		}
+		this.currOwned = btc;
+		return btc;
+	}
+	
 	//function to update pending include transaction list
 	/*
 	public void updateTxnIncludePending(LinkedList<Transaction> newList){
