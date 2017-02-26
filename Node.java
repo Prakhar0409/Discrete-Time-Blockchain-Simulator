@@ -15,6 +15,8 @@ public class Node{
 	Timestamp nextTxnTime;
 	Timestamp nextBlockTime;
 
+	LinkedList<Transaction> allTxns = new LinkedList<Transaction>();
+	
 	LinkedList<Transaction> txnIncludePending  = new LinkedList<Transaction>();
 	int numTxnIncludePending = 0;
 

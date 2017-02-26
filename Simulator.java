@@ -242,8 +242,7 @@ public class Simulator{
 							nodeList.get(currentNum).nextBlockTime = newBlockTime;
 							Block newBlock = nodeList.get(currentNum).generateBlock(currentBlock, newBlockTime);
 							Event newEvent = new Event(2, newBlock, newBlockTime, currentNum);
-							pendingEvents.add(newEvent);
-							
+							pendingEvents.add(newEvent);			
 						}
 
 						for(int i=0; i<numPeers; i++){
@@ -278,6 +277,24 @@ public class Simulator{
 					Timestamp nextBlockTime = currentNode.nextBlockTime;
 									
 					if(!(nextBlockTime.after(nextEventTime) || nextBlockTime.before(nextEventTime))){ //Only execute this if the node still decides to execute it
+						
+						//change block to include transactions
+						Block parent = currentNode.probParentBlock;
+						for(int i=0;i<currentNode.allTxns.size();i++){
+							boolean flag = true;
+							Transaction tmpTxn = currentNode.allTxns.get(i);
+							while(parent!=null){
+								if(parent.txnList.contains(tmpTxn)){
+									flag = false;
+									break;
+								}
+								parent = parent.getParentBlock();
+							}
+							if(flag){
+								currentBlock.addTxn(tmpTxn);
+							}
+						}
+						//end of adding pending transaction to the new block
 						
 						nodeList.get(creatorNum).addForwarded(currentBlock.getBlockID());
 						boolean addBlockSuccess = nodeList.get(creatorNum).addBlock(currentBlock);
@@ -331,6 +348,13 @@ public class Simulator{
 					String newTxnID = newTxn.getTxnID();
 					if(!(tempSenderNode.checkForwarded(newTxnID))){//Only execute if it has not already forwarded the same transaction earlier
 												
+						//add transactions to allTxns list 
+						Node currNode = nodeList.get(receiverNum);
+						if(!currNode.allTxns.contains(newTxn)){
+							currNode.allTxns.add(newTxn);
+						}
+						//end
+						
 						int txnReceiverNum = Integer.parseInt((newTxn.getReceiverID()).split("_")[1]);
 						System.out.print("Transaction Id "+ newTxnID+" Money receiver :"+txnReceiverNum+" "+"Message Receiver :"+receiverNum);
 						if(txnReceiverNum == receiverNum){ //checking the transaction is meant for that node or not
@@ -384,6 +408,14 @@ public class Simulator{
 					newTxn.updateAmount(newAmount);
 					// System.out.print("b: "+tempSenderNode.getCurrOwned()+" ");
 
+					
+					//add transactions to allTxns list 
+					Node currNode = nodeList.get(senderNum);
+					if(!currNode.allTxns.contains(newTxn)){
+						currNode.allTxns.add(newTxn);
+					}
+					//end
+					
 					//Adding the transaction at the sender end.
 					boolean addTxnSuccess = nodeList.get(senderNum).addTxn(newTxn);
 					nodeList.get(senderNum).addForwarded(newTxn.getTxnID());
