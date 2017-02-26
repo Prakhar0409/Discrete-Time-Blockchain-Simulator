@@ -81,7 +81,7 @@ public class Node{
 			Transaction tmpTxn = tmpTxns.get(i);
 			//check block validity
 			if(!this.checkValid(tmpTxn)){
-				System.out.println("Txn: "+tmpTxn.getTxnID()+" failed");
+//				System.out.println("Txn: "+tmpTxn.getTxnID()+" failed");
 				valid = false;
 				break;
 			}

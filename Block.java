@@ -16,12 +16,13 @@ public class Block{
 
 
 	Block(String uBlokckID, Timestamp creationTime, String creatorID, Block parentBlock, ArrayList<Transaction> txnList){
+//		System.out.println("1111111");
 		this.uBlokckID = uBlokckID;
 		this.creationTime = creationTime;
 		this.creatorID = creatorID;
 		this.parentBlock = parentBlock;
 		this.depth = parentBlock.getDepth()+1;
-		if(txnList==null){
+		if(txnList!=null){
 			this.txnList = txnList;
 		}
 	}

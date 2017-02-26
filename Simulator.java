@@ -14,7 +14,8 @@ public class Simulator{
 
 			PrintWriter transactionHistory = new PrintWriter("transactionHistory.txt", "UTF-8");
 			PrintWriter blockChainHistory = new PrintWriter("blockChainHistory.txt", "UTF-8");
-			int numPeers = Integer.parseInt(args[0]);
+			
+			int numPeers = 3;//Integer.parseInt(args[0]);
 			double minPropDelay = 10;
 			double maxPropDelay = 500;
 			double qDelayParameter = 12.0/1024.0;
@@ -300,7 +301,7 @@ public class Simulator{
 								}
 								while(parent!=null){
 									if(parent.txnList.contains(tmpTxn)){
-										System.out.println("Txn: "+tmpTxn.getTxnID()+" failed");
+//										System.out.println("Txn: "+tmpTxn.getTxnID()+" failed");
 										alreadyIncluded = true;
 										break;
 									}
@@ -444,7 +445,7 @@ public class Simulator{
 						nodeList.get(senderNum).addForwarded(newTxn.getTxnID());
 						if(addTxnSuccess){			//proceeding only when the transaction is successfully added
 							if (newAmount!=0){
-								transactionHistory.println(senderID + " sents " + newTxn.getAmount()+ " to " + newTxn.getReceiverID()+" a: "+ nodeList.get(senderNum).getCurrOwned());
+								transactionHistory.println(senderID + " sends " + newTxn.getAmount()+ " to " + newTxn.getReceiverID()+" a: "+ nodeList.get(senderNum).getCurrOwned());
 								for(int i=0; i<numPeers; i++){
 									Node nextNode = tempSenderNode.getNode(i);
 									if(nextNode == null){
