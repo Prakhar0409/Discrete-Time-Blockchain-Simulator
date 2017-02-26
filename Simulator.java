@@ -222,7 +222,9 @@ public class Simulator{
 
 						nodeList.get(currentNum).addForwarded(currentBlockID);
 						boolean addBlockSuccess = nodeList.get(currentNum).addBlock(currentBlock);
-
+						if(addBlockSuccess){
+							nodeList.get(currentNum).addPendingBlocks();
+						}
 						int currentDepth = nodeList.get(currentNum).probParentBlock.getDepth();
 						int blockDepth = currentBlock.getDepth();						
 

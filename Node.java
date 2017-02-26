@@ -84,10 +84,28 @@ public class Node{
 				if(this.uID.equals(creatorID)){
 					numCreatedBlock++;
 				}
+				
 				return true;
+			}
+		}else{
+			if(!this.blockIncludePending.contains(newBlock)){
+				this.blockIncludePending.add(newBlock);
 			}
 		}
 		return false;
+	}
+	
+	//adds pending blocks to the block chain
+	public void addPendingBlocks(){
+		int num_new = 1;
+		while(num_new>0){
+			num_new = 0;
+			for(int i=0;i<this.blockIncludePending.size();i++){
+				if(this.addBlock(this.blockIncludePending.get(i))){
+					num_new++;
+				}
+			}
+		}
 	}
 
 	public LinkedList<Transaction> getTxnIncludePending(){
