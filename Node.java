@@ -72,20 +72,27 @@ public class Node{
 	}
 
 	//Code to add a block in the node's block chain
-	public boolean addBlock(Block newBlock){
+	public boolean addBlock(Block recvNewBlock){
+		Block newBlock = new Block(recvNewBlock.getBlockID(), recvNewBlock.getCreationTime(), recvNewBlock.getCreatorID(), recvNewBlock.getParentBlock(), recvNewBlock.getTxns()); 
+//		if(newBlock.getParentBlockID() )
 		String parentBlockID = newBlock.getParentBlockID();
 		String currentBlockID = newBlock.getBlockID();
 		String creatorID = newBlock.getCreatorID();
-		if(blockChain.containsKey(parentBlockID)){
+
+		if(blockChain.containsKey(parentBlockID) || newBlock.getParentBlock() == null){
+			if(this.uID.equals(creatorID)){
+				numCreatedBlock++;
+			}
+//			System.out.println("hereh");
 			blockChain.put(currentBlockID, newBlock);
-			if(!blockChain.get(parentBlockID).checkChild(currentBlockID)){
+			if(newBlock.getParentBlock()!=null && !blockChain.get(parentBlockID).checkChild(currentBlockID)){
 				blockChain.get(parentBlockID).putChild(currentBlockID);
 				blockChain.put(currentBlockID, newBlock);
-				if(this.uID.equals(creatorID)){
-					numCreatedBlock++;
-				}
 				return true;
 			}
+		}else{
+			//parent not found in the list
+			this.blockIncludePending.add(newBlock);
 		}
 		return false;
 	}
@@ -225,5 +232,24 @@ public class Node{
 
 	public void addForwarded(String newID){
 		this.forwardedMessage.put(newID, true);
+	}
+	
+	public void testAdd(Block b){
+		String currentBlockID = b.getBlockID();
+		blockChain.put(currentBlockID, b);
+	}
+	
+	public void testPrintAll(){
+		for (String name: blockChain.keySet()){
+            String key =name.toString();
+            Block value = blockChain.get(name);  
+            System.out.println(key + " ");  
+            value.printBlock("");
+		} 
+	}
+	
+	public void testChange(){
+		Block c = blockChain.get("genesis");
+		c.setBlockID("yo");
 	}
 }

@@ -8,15 +8,19 @@ import java.util.HashMap;
 
 public class Simulator{
 	public static void main(String[] args){
-
+		if(args.length <=0 ){
+			System.out.println("Usage: java Simulator <num_peers>");
+			System.exit(-1);
+		}
 		int numPeers = Integer.parseInt(args[0]);
 
+		//for uniform random distribution on propagation delay
 		double minPropDelay = 10;
 		double maxPropDelay = 500;
-		double qDelayParameter = 1;
+		double qDelayParameter = 1;	//queing delay = 12KB/
 		ArrayList<Node> nodeList = new ArrayList<Node>();
 
-		//List to store all the accepted blockchain so far
+		//List to store all the accepted blockchain so far	// no point todo
 		ArrayList<Block> blockChain = new ArrayList<Block>();
 		long numBlock = 0;
 
@@ -65,7 +69,7 @@ public class Simulator{
 		connectionArray[n1Num][newNum] = true;
 		connectionArray[newNum][n1Num] = true;
 		numNode++;
-
+		//form a tree
 		while (numNode <= numPeers){
 			newNum = connRand.nextInt(numPeers);
 			while(tempConnection[newNum]){
@@ -80,7 +84,7 @@ public class Simulator{
 			connectionArray[newNum][oldNum] = true;
 			numNode++;
 		}
-
+		//now generate edges randomly
 		int maxRemainingEdges = ((numPeers-1)*(numPeers-2))/2;
 		int remainingEdges = connRand.nextInt()%maxRemainingEdges;
 		while(remainingEdges>0){
@@ -142,6 +146,7 @@ public class Simulator{
 
 
 		//Assigning mean to generate transaction later for each node from an exponential distribution
+		//inter arrival time for the transactions is exponential with mean as below
 		Double[] txnMean = new Double[numPeers];
 		Random randMean = new Random(System.nanoTime());
 		for(int i=0; i<numPeers; i++){
@@ -173,7 +178,7 @@ public class Simulator{
 			double nextTimeGap = -1*Math.log(nextTimeOffset)/cpuPower[i];
 			Timestamp nextBlockTime = new Timestamp(currTimeOffset + (long)nextTimeGap*1000);
 			Block newBlock = nodeList.get(i).generateBlock(genesisBlock, nextBlockTime);
-			Event newEvent = new Event(2, newBlock, nextBlockTime, i);
+			Event newEvent = new Event(2, newBlock, nextBlockTime, i);	//todo
 			nodeList.get(i).nextBlockTime = nextBlockTime;
 			pendingEvents.add(newEvent);
 		}
@@ -197,12 +202,17 @@ public class Simulator{
 			}
 			String receiverID = nodeList.get(rcvNum).getUID();
 			float receivedAmount = 0 ;
+			//received amount will be decided at time of event execution
 			Transaction newTransaction = nodeList.get(i).generateTxn(receiverID, receivedAmount, nextTxnTime);
 			Event newEvent = new Event(4, newTransaction, nextTxnTime);
 			pendingEvents.add(newEvent);
 		}
 
 		//Timestamp of the next event to be executed
+		if(pendingEvents.peek() == null){
+			System.out.println("Panic: Not enough nodes and so no events in the simulator!\nExiting.");
+			System.exit(-2);
+		}
 		Timestamp nextEventTime = pendingEvents.peek().getEventTimestamp();
 		Iterator<Event> eventItr = pendingEvents.iterator();
 		while(nextEventTime.before(maxTime)){			
@@ -217,6 +227,7 @@ public class Simulator{
 					int senderNum = nextEvent.getSenderNum();
 					Node currentNode = nodeList.get(currentNum);
 					Block currentBlock = nextEvent.getEventBlock();
+					
 					String currentBlockID = currentBlock.getBlockID();
 					if(!currentNode.checkForwarded(currentBlockID)){
 

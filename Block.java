@@ -13,16 +13,23 @@ public class Block{
 	private ArrayList<String> childList = new ArrayList<String>();
 	private int numChild = 0;
 	private ArrayList<Transaction> txnList = new ArrayList<Transaction>();
-	private int numTxns;
+	private int numTxns=0;
 
 	Block(String uBlokckID, Timestamp creationTime, String creatorID, Block parentBlock, ArrayList<Transaction> txnList){
 		this.uBlokckID = uBlokckID;
 		this.creationTime = creationTime;
 		this.creatorID = creatorID;
-		this.parentBlock = parentBlock;
-		this.depth = parentBlock.getDepth()+1;
+		if(parentBlock == null){
+			this.parentBlock = null;
+			this.depth = 0;
+		}else{
+			this.parentBlock = parentBlock;
+			this.depth = parentBlock.getDepth()+1;
+		}
 		this.txnList = txnList;
-		this.numTxns = txnList.size()-1;
+		if(txnList != null){
+			this.numTxns = txnList.size()-1;
+		}
 	}
 
 	Block(String uBlokckID, Timestamp creationTime){
@@ -36,22 +43,27 @@ public class Block{
 
 	//function to add txns to a block
 	public void addTxn(Transaction newTxn){
-		txnList.add(numTxns++,newTxn);
+		txnList.add(newTxn);
 	}
 
 	//returning a transaction from the block using correspondng transaction id
 	public Transaction getTxn(String txnID){
-		for(int i = 0; i<=numTxns; i++){
+		for(int i = 0; i<=txnList.size(); i++){
 			if(txnList.get(i).getTxnID().equals(txnID)){
 				return txnList.get(i);
 			}
 		}
 		return null;
 	}
+	
+	//returning all transactions in the block
+	public ArrayList<Transaction> getTxns(){
+		return txnList;
+	}
 
 	//to check whether a txn with particular id has been there in the list or not
 	public boolean containsTxn(String txnID){
-		for(int i = 0; i<=numTxns; i++){
+		for(int i = 0; i<=txnList.size(); i++){
 			if(txnList.get(i).getTxnID().equals(txnID)){
 				return true;
 			}
@@ -89,6 +101,9 @@ public class Block{
 
 	//to return block id of the parent node
 	public String getParentBlockID(){
+		if(this.parentBlock == null){
+			return "null";
+		}
 		return this.parentBlock.getBlockID();
 	}
 
@@ -130,7 +145,11 @@ public class Block{
 		System.out.println(ident+"Block UID:" + this.uBlokckID);
 		System.out.println(ident+"Creation Time:" + this.creationTime);
 		System.out.println(ident+"Creator ID:" + this.creatorID);
-		System.out.println(ident+"Previous Block UID:" + this.parentBlock.getBlockID());
+//		System.out.println(ident+"Previous Block UID:" + this.parentBlock.getBlockID());
+	}
+	
+	public void setBlockID(String t){
+		this.uBlokckID = t;
 	}
 	
 	public boolean matchBlockID(String newID){
