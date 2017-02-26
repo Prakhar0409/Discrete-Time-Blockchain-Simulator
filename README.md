@@ -4,9 +4,12 @@
 ### Compiling
 * Change directory to the source code directory.
 * To compile 
+
 > javac Simulator.java
+
 ### Run
 * To run the Simlator program type the following:
+
 > java Simulator <num_peers>
 
 where, num_peers : number of nodes in the bitcoin P2P network to run during simulation
@@ -14,8 +17,10 @@ where, num_peers : number of nodes in the bitcoin P2P network to run during simu
 ## I/O Format:
 The code generate 3 type of output files:
 >blockChainHistory.txt 
-> transactionHistory.txt
-> file_i.txt
+
+>transactionHistory.txt
+
+>file_i.txt
 
 #### blockChainHistory.txt 
 It contains information about all the blockchain events that happend in the simulator
