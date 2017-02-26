@@ -1,5 +1,6 @@
 import java.sql.Timestamp;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -15,7 +16,7 @@ public class Node{
 	Timestamp nextTxnTime;
 	Timestamp nextBlockTime;
 
-	LinkedList<Transaction> allTxns = new LinkedList<Transaction>();
+	List<Transaction> allTxns = new ArrayList<Transaction>(); 
 	
 	LinkedList<Transaction> txnIncludePending  = new LinkedList<Transaction>();
 	int numTxnIncludePending = 0;
